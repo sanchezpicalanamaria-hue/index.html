@@ -1,0 +1,131 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Calculadora Financiera</title>
+<style>
+:root{--bg:#f6f7f4;--card:#fff;--tx:#1d2b2a;--mu:#5f6f6c;--ac:#0f766e;--on:#fff;--bd:#dde3df;--hd:#e6f1ee;--neg:#b42318;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101816;--card:#182421;--tx:#e6efec;--mu:#9fb2ae;--ac:#2dd4bf;--on:#062b26;--bd:#2a3b37;--hd:#20332f;--neg:#f97066}}
+:root[data-theme="dark"]{--bg:#101816;--card:#182421;--tx:#e6efec;--mu:#9fb2ae;--ac:#2dd4bf;--on:#062b26;--bd:#2a3b37;--hd:#20332f;--neg:#f97066}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:860px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:4px 0 12px}
+nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+nav button{flex:1;min-width:130px;padding:9px 10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:8px;cursor:pointer;font:inherit}
+nav button.on{background:var(--ac);color:var(--on);border-color:var(--ac)}
+section{display:none;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px}
+section.on{display:block}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:12px}
+label{display:block;font-size:.8rem;color:var(--mu)}
+input,select,textarea{width:100%;box-sizing:border-box;padding:8px;margin-top:3px;border:1px solid var(--bd);border-radius:6px;background:var(--bg);color:var(--tx);font:inherit}
+.btn{padding:9px 16px;border:0;border-radius:8px;background:var(--ac);color:var(--on);font:inherit;cursor:pointer}
+.res{margin-top:14px}.big{font-size:1.5rem;font-weight:600;color:var(--ac)}
+.sc{overflow-x:auto;margin-top:10px}
+table{border-collapse:collapse;width:100%;font-size:.85rem;white-space:nowrap}
+th,td{padding:6px 10px;border-bottom:1px solid var(--bd);text-align:right}
+th{background:var(--hd)}th:first-child,td:first-child{text-align:left}
+.mu{color:var(--mu);font-size:.8rem}
+svg text{fill:var(--tx);font-size:12px}
+</style></head><body><main>
+<h1>Calculadora Financiera</h1>
+<nav id="nav"><button class="on" data-t="a">Tasas</button><button data-t="b">Valor del dinero</button><button data-t="c">Diagrama económico</button><button data-t="d">Amortización</button></nav>
+
+<section id="a" class="on">
+<div class="g">
+<label>Tasa (%)<input id="t_r" type="number" step="any" value="24"></label>
+<label>Tipo<select id="t_tipo"><option value="nom">Nominal</option><option value="efe">Efectiva periódica</option></select></label>
+<label>Periodicidad<select id="t_m"><option value="12">Mensual</option><option value="6">Bimestral</option><option value="4">Trimestral</option><option value="3">Cuatrimestral</option><option value="2">Semestral</option><option value="1">Anual</option></select></label>
+<label>Modalidad<select id="t_mod"><option value="ven">Vencida</option><option value="ant">Anticipada</option></select></label>
+</div><button class="btn" onclick="tasas()">Convertir</button><div class="res" id="t_out"></div>
+<p class="mu">Nominal: tasa anual con capitalización según la periodicidad. Anticipada → vencida: i = ia/(1−ia). Equivalencia: (1+EA) = (1+i)^m.</p>
+</section>
+
+<section id="b">
+<div class="g">
+<label>Cálculo<select id="v_m">
+<option value="vf">Valor futuro (dado VP)</option><option value="vp">Valor presente (dado VF)</option>
+<option value="vpa">VP de una anualidad (dada cuota)</option><option value="vfa">VF de una anualidad (dada cuota)</option>
+<option value="avp">Cuota de anualidad (dado VP)</option><option value="avf">Cuota de anualidad (dado VF)</option></select></label>
+<label>Monto ($)<input id="v_a" type="number" step="any" value="1000000"></label>
+<label>Tasa efectiva por período (%)<input id="v_i" type="number" step="any" value="2"></label>
+<label>N.º de períodos<input id="v_n" type="number" step="any" value="12"></label>
+<label>Anualidad<select id="v_t"><option value="ven">Vencida</option><option value="ant">Anticipada</option></select></label>
+</div><button class="btn" onclick="vdt()">Calcular</button><div class="res" id="v_out"></div>
+</section>
+
+<section id="c">
+<label>Flujos de caja, uno por línea como <b>período:valor</b> (positivo = ingreso, negativo = egreso)<textarea id="d_in" rows="6">0:-1000000
+1:300000
+2:300000
+3:300000
+4:300000
+5:500000</textarea></label><br>
+<button class="btn" onclick="diag()">Dibujar diagrama</button><div class="sc" id="d_out"></div>
+</section>
+
+<section id="d">
+<div class="g">
+<label>Monto del préstamo ($)<input id="m_p" type="number" step="any" value="10000000"></label>
+<label>Tasa efectiva por período (%)<input id="m_i" type="number" step="any" value="1.5"></label>
+<label>N.º de períodos<input id="m_n" type="number" value="12"></label>
+<label>Sistema<select id="m_s"><option value="c">Cuota constante</option><option value="d">Cuota decreciente (abono constante a capital)</option></select></label>
+</div><button class="btn" onclick="amort()">Generar tabla</button><div class="res" id="m_out"></div>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const f=(x,d=2)=>x.toLocaleString('es-CO',{minimumFractionDigits:d,maximumFractionDigits:d});
+const pc=x=>f(x*100,4)+'%';
+$('nav').onclick=e=>{const t=e.target.dataset.t;if(!t)return;
+ document.querySelectorAll('nav button,section').forEach(x=>x.classList.remove('on'));
+ e.target.classList.add('on');$(t).classList.add('on')};
+
+const P={12:'Mensual',6:'Bimestral',4:'Trimestral',3:'Cuatrimestral',2:'Semestral',1:'Anual'};
+function tasas(){
+ const r=+$('t_r').value/100,m=+$('t_m').value;
+ const ip=$('t_tipo').value=='nom'?r/m:r;
+ const iv=$('t_mod').value=='ant'?ip/(1-ip):ip;
+ if(!isFinite(iv)||iv<=-1){$('t_out').textContent='Revisa los datos.';return}
+ const ea=Math.pow(1+iv,m)-1;
+ let h=`<div class="mu">Tasa efectiva anual equivalente</div><div class="big">${pc(ea)}</div><div class="sc"><table><tr><th>Periodicidad</th><th>Efectiva periódica vencida</th><th>Efectiva periódica anticipada</th><th>Nominal vencida</th><th>Nominal anticipada</th></tr>`;
+ for(const k in P){const v=Math.pow(1+ea,1/k)-1,a=v/(1+v);
+  h+=`<tr><td>${P[k]}</td><td>${pc(v)}</td><td>${pc(a)}</td><td>${pc(v*k)}</td><td>${pc(a*k)}</td></tr>`}
+ $('t_out').innerHTML=h+'</table></div>';
+}
+
+function vdt(){
+ const m=$('v_m').value,A=+$('v_a').value,i=+$('v_i').value/100,n=+$('v_n').value,ant=$('v_t').value=='ant';
+ const g=Math.pow(1+i,n),k=ant?1+i:1;
+ const fva=i?(g-1)/i*k:n, pva=i?(1-1/g)/i*k:n;
+ const R={vf:[A*g,'Valor futuro'],vp:[A/g,'Valor presente'],vpa:[A*pva,'Valor presente de la anualidad'],
+  vfa:[A*fva,'Valor futuro de la anualidad'],avp:[A/pva,'Cuota de la anualidad'],avf:[A/fva,'Cuota de la anualidad']}[m];
+ $('v_out').innerHTML=isFinite(R[0])?`<div class="mu">${R[1]}</div><div class="big">$ ${f(R[0])}</div>`:'Revisa los datos.';
+}
+
+function diag(){
+ const fl=$('d_in').value.split('\n').map(l=>l.split(':').map(Number)).filter(x=>x.length==2&&isFinite(x[0])&&isFinite(x[1]));
+ if(!fl.length){$('d_out').textContent='Sin datos válidos.';return}
+ const N=Math.max(...fl.map(x=>x[0])),mx=Math.max(...fl.map(x=>Math.abs(x[1]))||1)||1;
+ const st=70,W=Math.max(560,(N+1)*st+60),y0=170,H=340,L=[];
+ L.push(`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs><marker id="ar" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8z" fill="context-stroke"/></marker></defs>`);
+ L.push(`<line x1="20" y1="${y0}" x2="${W-15}" y2="${y0}" stroke="currentColor" stroke-width="2" style="color:var(--tx)"/>`);
+ for(let t=0;t<=N;t++){const x=40+t*st;
+  L.push(`<line x1="${x}" y1="${y0-4}" x2="${x}" y2="${y0+4}" stroke="currentColor" style="color:var(--tx)"/><text x="${x}" y="${y0+20}" text-anchor="middle">${t}</text>`)}
+ const s={};fl.forEach(([t,v])=>s[t]=(s[t]||0)+v);
+ for(const t in s){const v=s[t],x=40+t*st,h=Math.max(20,Math.abs(v)/mx*130),pos=v>=0,c=pos?'var(--ac)':'var(--neg)';
+  const y2=pos?y0-h:y0+h;
+  L.push(`<line x1="${x}" y1="${y0}" x2="${x}" y2="${y2}" stroke="${c}" stroke-width="2.5" marker-end="url(#ar)"/><text x="${x}" y="${pos?y2-8:y2+16}" text-anchor="middle">${f(v,0)}</text>`)}
+ L.push(`<text x="20" y="20">Período (t)</text></svg>`);
+ $('d_out').innerHTML=L.join('');
+}
+
+function amort(){
+ const P0=+$('m_p').value,i=+$('m_i').value/100,n=Math.round(+$('m_n').value),d=$('m_s').value=='d';
+ if(!(P0>0)||!(n>0)){$('m_out').textContent='Revisa los datos.';return}
+ const c=i?P0*i/(1-Math.pow(1+i,-n)):P0/n;
+ let s=P0,tc=0,ti=0,h='<div class="sc"><table><tr><th>Período</th><th>Cuota</th><th>Interés</th><th>Abono a capital</th><th>Saldo</th></tr>';
+ h+=`<tr><td>0</td><td></td><td></td><td></td><td>${f(P0)}</td></tr>`;
+ for(let t=1;t<=n;t++){const it=s*i,ab=d?P0/n:c-it,q=ab+it;s=t==n?0:s-ab;tc+=q;ti+=it;
+  h+=`<tr><td>${t}</td><td>${f(q)}</td><td>${f(it)}</td><td>${f(ab)}</td><td>${f(Math.abs(s)<1e-6?0:s)}</td></tr>`}
+ h+=`<tr><th>Total</th><th>${f(tc)}</th><th>${f(ti)}</th><th>${f(P0)}</th><th></th></tr></table></div>`;
+ $('m_out').innerHTML=(d?'':`<div class="mu">Cuota constante</div><div class="big">$ ${f(c)}</div>`)+h;
+}
+tasas();vdt();diag();amort();
+</script></body></html>
